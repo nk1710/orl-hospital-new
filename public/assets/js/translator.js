@@ -1,7 +1,7 @@
 /**
  * ORL International Hospital - Multilingual Translation Engine
  * 
- * Languages:
+ * Supported Languages:
  * 1. English (Original)
  * 2. Myanmar / Burmese (မြန်မာစာ)
  * 3. Hindi (हिन्दी)
@@ -45,31 +45,42 @@
     return (localStorage.getItem('orl_language') || 'en').toLowerCase();
   }
 
-  function setLangCookie(lang) {
-    var cookieVal = '/en/' + lang;
+  function clearAllGoogleTransCookies() {
     var host = window.location.hostname;
-
-    document.cookie = 'googtrans=' + cookieVal + '; path=/;';
-
-    var parts = host.split('.');
-    if (parts.length >= 2 && !host.match(/^\d+\.\d+\.\d+\.\d+$/)) {
-      var rootDomain = parts.slice(-2).join('.');
-      document.cookie = 'googtrans=' + cookieVal + '; path=/; domain=.' + rootDomain + ';';
-    }
-
-    if (lang === 'en') {
-      document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-      if (parts.length >= 2 && !host.match(/^\d+\.\d+\.\d+\.\d+$/)) {
-        var rootDomain = parts.slice(-2).join('.');
-        document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.' + rootDomain + ';';
+    var baseHost = host.replace(/^www\./, '');
+    var domains = [
+      host,
+      '.' + host,
+      baseHost,
+      '.' + baseHost
+    ];
+    var paths = ['/', window.location.pathname];
+    for (var d = 0; d < domains.length; d++) {
+      for (var p = 0; p < paths.length; p++) {
+        document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=' + paths[p] + '; domain=' + domains[d] + ';';
+        document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=' + paths[p] + ';';
       }
     }
   }
 
+  function setGoogleTransCookie(lang) {
+    clearAllGoogleTransCookies();
+    var val = '/en/' + lang;
+    var host = window.location.hostname;
+    var baseHost = host.replace(/^www\./, '');
+
+    document.cookie = 'googtrans=' + val + '; path=/;';
+    if (baseHost && baseHost.indexOf('.') !== -1 && !baseHost.match(/^\d+\.\d+\.\d+\.\d+$/)) {
+      document.cookie = 'googtrans=' + val + '; path=/; domain=.' + baseHost + ';';
+      document.cookie = 'googtrans=' + val + '; path=/; domain=' + baseHost + ';';
+    }
+  }
+
+  // Ensure googleTranslateElementInit is defined
   window.googleTranslateElementInit = function () {
     var savedLang = getCurrentLang();
     if (savedLang && savedLang !== 'en') {
-      setLangCookie(savedLang);
+      setGoogleTransCookie(savedLang);
     }
 
     if (window.google && window.google.translate) {
@@ -80,7 +91,6 @@
       }, 'google_translate_element');
     }
 
-    // Auto-apply saved language to combo on load so 100% of text translates
     if (savedLang && savedLang !== 'en') {
       var tries = 0;
       var timer = setInterval(function () {
@@ -90,55 +100,51 @@
           clearInterval(timer);
           if (combo.value !== savedLang) {
             combo.value = savedLang;
-            combo.dispatchEvent(new Event('change'));
+            combo.dispatchEvent(new Event('change', { bubbles: true }));
+            if (typeof jQuery !== 'undefined') {
+              $(combo).val(savedLang).trigger('change');
+            }
           }
         }
-        if (tries > 40) clearInterval(timer);
+        if (tries > 50) clearInterval(timer);
       }, 100);
     }
   };
 
-  function ensureGoogleTranslate() {
-    if (!document.getElementById('google_translate_element')) {
-      var div = document.createElement('div');
-      div.id = 'google_translate_element';
-      div.style.display = 'none';
-      document.body.appendChild(div);
-    }
-
-    if (!document.querySelector('script[src*="translate_a/element.js"]')) {
-      var script = document.createElement('script');
-      script.type = 'text/javascript';
-      script.async = true;
-      script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
-      document.head.appendChild(script);
-    }
+  // If google.translate already exists in memory, initialize right away
+  if (window.google && window.google.translate && window.google.translate.TranslateElement) {
+    window.googleTranslateElementInit();
   }
 
-  // Master Language Switcher function
+  // Change Language Handler
   window.changeHospitalLanguage = function (langCode) {
     langCode = langCode.toLowerCase();
-    var previousLang = getCurrentLang();
 
-    setLangCookie(langCode);
-    localStorage.setItem('orl_language', langCode);
-
-    updateNavbarUI(langCode);
-
-    // If switching to English, reload to reset original DOM perfectly
-    if (langCode === 'en' && previousLang !== 'en') {
+    if (langCode === 'en') {
+      clearAllGoogleTransCookies();
+      localStorage.removeItem('orl_language');
       window.location.reload();
       return;
     }
 
+    setGoogleTransCookie(langCode);
+    localStorage.setItem('orl_language', langCode);
+
+    updateNavbarUI(langCode);
+
     var combo = document.querySelector('select.goog-te-combo');
     if (combo) {
       combo.value = langCode;
-      combo.dispatchEvent(new Event('change'));
-    } else {
-      // If combo not ready, reload page - cookie will translate 100% of DOM on load!
-      window.location.reload();
+      combo.dispatchEvent(new Event('change', { bubbles: true }));
+      if (typeof jQuery !== 'undefined') {
+        $(combo).val(langCode).trigger('change');
+      }
     }
+
+    // A fast reload re-executes Google Translate on the entire page DOM
+    setTimeout(function () {
+      window.location.reload();
+    }, 200);
   };
 
   function buildDropdownMenuHTML(currentLang) {
@@ -158,7 +164,6 @@
 
   function updateNavbarUI(langCode) {
     var info = getLangInfo(langCode);
-
     var label = document.querySelector('.orl-lang-current-label');
     if (label) {
       label.textContent = info.flag + ' ' + info.native;
@@ -179,7 +184,6 @@
 
     toggleBtn.addEventListener('click', function (e) {
       e.stopPropagation();
-      var isOpen = container.classList.contains('open');
       container.classList.toggle('open');
     });
 
@@ -200,9 +204,9 @@
     }
   });
 
-  // Inject ONLY in ONE place: The Navbar!
+  // Inject ONLY into the Navbar!
   function injectSingleLanguageSwitcher() {
-    // Clean up any old duplicate switchers
+    // Remove any old/duplicate switchers
     document.querySelectorAll('.orl-lang-floating, .orl-lang-desktop').forEach(function (el) {
       el.remove();
     });
@@ -210,7 +214,6 @@
     var currentLang = getCurrentLang();
     var currentInfo = getLangInfo(currentLang);
 
-    // Find the Navbar area (right beside search button)
     var searchBtn = document.getElementById('search-btn');
     if (searchBtn && !document.querySelector('.orl-lang-navbar')) {
       var navDiv = document.createElement('div');
@@ -226,8 +229,6 @@
       searchBtn.parentNode.insertBefore(navDiv, searchBtn);
       attachSwitcherEvents(navDiv);
     }
-
-    ensureGoogleTranslate();
   }
 
   if (document.readyState === 'loading') {

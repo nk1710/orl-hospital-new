@@ -497,7 +497,7 @@ drdhirendrasinghent@gmail.com</a>
 </div>
 </div> 
 <div class="col-12 col-sm-3">
-<div id="google_translate_element" style="display:none;"></div>
+<div id="google_translate_element" style="position:absolute;top:-9999px;left:-9999px;"></div>
 <div class="footer-language bg-dark">
   <label for="language-selector" class="visually-hidden">Language</label>
   <select id="language-selector" name="language" class="bg-dark text-white border-white">
@@ -1005,7 +1005,16 @@ placeholder="Type your query here...">
 </script> 
 
 
-<script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+<script type="text/javascript">
+function googleTranslateElementInit() {
+    new google.translate.TranslateElement({
+        pageLanguage: 'en',
+        layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+        autoDisplay: false
+    }, 'google_translate_element');
+}
+</script>
+<script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="public/assets/js/jquery-3.6.3.min.js"></script>

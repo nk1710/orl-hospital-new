@@ -708,24 +708,34 @@ var form = $('.contact__form'),
             return (localStorage.getItem('orl_language') || 'en').toLowerCase();
         }
 
-        function setLangCookie(lang) {
-            var cookieVal = '/en/' + lang;
+        function clearAllGoogleTransCookies() {
             var host = window.location.hostname;
-
-            document.cookie = 'googtrans=' + cookieVal + '; path=/;';
-
-            var parts = host.split('.');
-            if (parts.length >= 2 && !host.match(/^\d+\.\d+\.\d+\.\d+$/)) {
-                var rootDomain = parts.slice(-2).join('.');
-                document.cookie = 'googtrans=' + cookieVal + '; path=/; domain=.' + rootDomain + ';';
-            }
-
-            if (lang === 'en') {
-                document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-                if (parts.length >= 2 && !host.match(/^\d+\.\d+\.\d+\.\d+$/)) {
-                    var rootDomain = parts.slice(-2).join('.');
-                    document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.' + rootDomain + ';';
+            var baseHost = host.replace(/^www\./, '');
+            var domains = [
+                host,
+                '.' + host,
+                baseHost,
+                '.' + baseHost
+            ];
+            var paths = ['/', window.location.pathname];
+            for (var d = 0; d < domains.length; d++) {
+                for (var p = 0; p < paths.length; p++) {
+                    document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=' + paths[p] + '; domain=' + domains[d] + ';';
+                    document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=' + paths[p] + ';';
                 }
+            }
+        }
+
+        function setLangCookie(lang) {
+            clearAllGoogleTransCookies();
+            var val = '/en/' + lang;
+            var host = window.location.hostname;
+            var baseHost = host.replace(/^www\./, '');
+
+            document.cookie = 'googtrans=' + val + '; path=/;';
+            if (baseHost && baseHost.indexOf('.') !== -1 && !baseHost.match(/^\d+\.\d+\.\d+\.\d+$/)) {
+                document.cookie = 'googtrans=' + val + '; path=/; domain=.' + baseHost + ';';
+                document.cookie = 'googtrans=' + val + '; path=/; domain=' + baseHost + ';';
             }
         }
 
@@ -752,52 +762,48 @@ var form = $('.contact__form'),
                         clearInterval(timer);
                         if (combo.value !== savedLang) {
                             combo.value = savedLang;
-                            combo.dispatchEvent(new Event('change'));
+                            combo.dispatchEvent(new Event('change', { bubbles: true }));
+                            if (typeof jQuery !== 'undefined') {
+                                $(combo).val(savedLang).trigger('change');
+                            }
                         }
                     }
-                    if (tries > 40) clearInterval(timer);
+                    if (tries > 50) clearInterval(timer);
                 }, 100);
             }
         };
 
-        function ensureGoogleTranslate() {
-            if (!document.getElementById('google_translate_element')) {
-                var div = document.createElement('div');
-                div.id = 'google_translate_element';
-                div.style.display = 'none';
-                document.body.appendChild(div);
-            }
-
-            if (!document.querySelector('script[src*="translate_a/element.js"]')) {
-                var script = document.createElement('script');
-                script.type = 'text/javascript';
-                script.async = true;
-                script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
-                document.head.appendChild(script);
-            }
+        if (window.google && window.google.translate && window.google.translate.TranslateElement) {
+            window.googleTranslateElementInit();
         }
 
         window.changeHospitalLanguage = function (langCode) {
             langCode = langCode.toLowerCase();
-            var previousLang = getCurrentLang();
+
+            if (langCode === 'en') {
+                clearAllGoogleTransCookies();
+                localStorage.removeItem('orl_language');
+                window.location.reload();
+                return;
+            }
 
             setLangCookie(langCode);
             localStorage.setItem('orl_language', langCode);
 
             updateNavbarUI(langCode);
 
-            if (langCode === 'en' && previousLang !== 'en') {
-                window.location.reload();
-                return;
-            }
-
             var combo = document.querySelector('select.goog-te-combo');
             if (combo) {
                 combo.value = langCode;
-                combo.dispatchEvent(new Event('change'));
-            } else {
-                window.location.reload();
+                combo.dispatchEvent(new Event('change', { bubbles: true }));
+                if (typeof jQuery !== 'undefined') {
+                    $(combo).val(langCode).trigger('change');
+                }
             }
+
+            setTimeout(function () {
+                window.location.reload();
+            }, 200);
         };
 
         function buildDropdownMenuHTML(currentLang) {
