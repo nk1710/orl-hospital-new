@@ -674,7 +674,8 @@ var form = $('.contact__form'),
 
     // ==========================================================================
     // ORL International Hospital - Multilingual Translation Engine
-    // Supported: English, Myanmar, Hindi, Nepali, Bengali, Arabic, Russian, Uzbek, French, Swahili
+    // Single Location: In Navbar right next to search button
+    // Languages: English, Myanmar, Hindi, Nepali, Bengali, Arabic, Russian, Uzbek, French, Swahili
     // ==========================================================================
     (function () {
         'use strict';
@@ -729,13 +730,33 @@ var form = $('.contact__form'),
         }
 
         window.googleTranslateElementInit = function () {
+            var savedLang = getCurrentLang();
+            if (savedLang && savedLang !== 'en') {
+                setLangCookie(savedLang);
+            }
+
             if (window.google && window.google.translate) {
                 new window.google.translate.TranslateElement({
                     pageLanguage: 'en',
-                    includedLanguages: 'en,my,hi,ne,bn,ar,ru,uz,fr,sw',
                     layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE,
                     autoDisplay: false
                 }, 'google_translate_element');
+            }
+
+            if (savedLang && savedLang !== 'en') {
+                var tries = 0;
+                var timer = setInterval(function () {
+                    tries++;
+                    var combo = document.querySelector('select.goog-te-combo');
+                    if (combo) {
+                        clearInterval(timer);
+                        if (combo.value !== savedLang) {
+                            combo.value = savedLang;
+                            combo.dispatchEvent(new Event('change'));
+                        }
+                    }
+                    if (tries > 40) clearInterval(timer);
+                }, 100);
             }
         };
 
@@ -751,41 +772,36 @@ var form = $('.contact__form'),
                 var script = document.createElement('script');
                 script.type = 'text/javascript';
                 script.async = true;
-                script.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+                script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
                 document.head.appendChild(script);
             }
         }
 
         window.changeHospitalLanguage = function (langCode) {
             langCode = langCode.toLowerCase();
+            var previousLang = getCurrentLang();
+
             setLangCookie(langCode);
             localStorage.setItem('orl_language', langCode);
 
-            updateAllSwitcherUI(langCode);
+            updateNavbarUI(langCode);
+
+            if (langCode === 'en' && previousLang !== 'en') {
+                window.location.reload();
+                return;
+            }
 
             var combo = document.querySelector('select.goog-te-combo');
             if (combo) {
                 combo.value = langCode;
                 combo.dispatchEvent(new Event('change'));
             } else {
-                var attempts = 0;
-                var interval = setInterval(function () {
-                    attempts++;
-                    var c = document.querySelector('select.goog-te-combo');
-                    if (c) {
-                        clearInterval(interval);
-                        c.value = langCode;
-                        c.dispatchEvent(new Event('change'));
-                    } else if (attempts >= 6) {
-                        clearInterval(interval);
-                        window.location.reload();
-                    }
-                }, 150);
+                window.location.reload();
             }
         };
 
         function buildDropdownMenuHTML(currentLang) {
-            var html = '<ul class="orl-lang-menu">';
+            var html = '<ul class="orl-lang-nav-menu">';
             for (var i = 0; i < LANGUAGES.length; i++) {
                 var l = LANGUAGES[i];
                 var activeClass = (l.code === currentLang) ? ' active' : '';
@@ -799,16 +815,12 @@ var form = $('.contact__form'),
             return html;
         }
 
-        function updateAllSwitcherUI(langCode) {
+        function updateNavbarUI(langCode) {
             var info = getLangInfo(langCode);
-
-            document.querySelectorAll('.orl-lang-current-label').forEach(function (el) {
-                el.textContent = info.flag + ' ' + info.native;
-            });
-
-            document.querySelectorAll('.orl-lang-current-code').forEach(function (el) {
-                el.textContent = info.flag + ' ' + info.code.toUpperCase();
-            });
+            var label = document.querySelector('.orl-lang-current-label');
+            if (label) {
+                label.textContent = info.flag + ' ' + info.native;
+            }
 
             document.querySelectorAll('.orl-lang-item').forEach(function (item) {
                 if (item.getAttribute('data-lang') === langCode) {
@@ -817,26 +829,15 @@ var form = $('.contact__form'),
                     item.classList.remove('active');
                 }
             });
-
-            var footerSelect = document.getElementById('language-selector');
-            if (footerSelect && footerSelect.value !== langCode) {
-                footerSelect.value = langCode;
-            }
         }
 
         function attachSwitcherEvents(container) {
-            var toggleBtn = container.querySelector('.orl-lang-toggle');
+            var toggleBtn = container.querySelector('.orl-lang-nav-btn');
             if (!toggleBtn) return;
 
             toggleBtn.addEventListener('click', function (e) {
                 e.stopPropagation();
-                var isOpen = container.classList.contains('open');
-                document.querySelectorAll('.orl-lang-switcher').forEach(function (s) {
-                    s.classList.remove('open');
-                });
-                if (!isOpen) {
-                    container.classList.add('open');
-                }
+                container.classList.toggle('open');
             });
 
             container.querySelectorAll('.orl-lang-item').forEach(function (item) {
@@ -850,41 +851,30 @@ var form = $('.contact__form'),
         }
 
         document.addEventListener('click', function () {
-            document.querySelectorAll('.orl-lang-switcher').forEach(function (s) {
-                s.classList.remove('open');
-            });
+            var switcher = document.querySelector('.orl-lang-navbar');
+            if (switcher) {
+                switcher.classList.remove('open');
+            }
         });
 
-        function injectLanguageSwitchers() {
+        // Inject ONLY into the Navbar!
+        function injectSingleLanguageSwitcher() {
+            // Remove any old/duplicate switchers
+            document.querySelectorAll('.orl-lang-floating, .orl-lang-desktop').forEach(function (el) {
+                el.remove();
+            });
+
             var currentLang = getCurrentLang();
             var currentInfo = getLangInfo(currentLang);
 
-            // 1. Top Header Switcher (Desktop)
-            var topHeaderRight = document.querySelector('.top-header .me-lg-5');
-            if (topHeaderRight && !topHeaderRight.querySelector('.orl-lang-desktop')) {
-                var topDiv = document.createElement('div');
-                topDiv.className = 'orl-lang-switcher orl-lang-desktop';
-                topDiv.innerHTML =
-                    '<button class="orl-lang-toggle" type="button" aria-label="Select Language">' +
+            var searchBtn = document.getElementById('search-btn');
+            if (searchBtn && !document.querySelector('.orl-lang-navbar')) {
+                var navDiv = document.createElement('div');
+                navDiv.className = 'orl-lang-navbar';
+                navDiv.innerHTML =
+                    '<button class="orl-lang-nav-btn" type="button" aria-label="Select Language" title="Translate Website">' +
                     '  <span class="globe-icon">🌐</span>' +
                     '  <span class="orl-lang-current-label">' + currentInfo.flag + ' ' + currentInfo.native + '</span>' +
-                    '  <i class="ti-angle-down arrow-icon"></i>' +
-                    '</button>' +
-                    buildDropdownMenuHTML(currentLang);
-
-                topHeaderRight.prepend(topDiv);
-                attachSwitcherEvents(topDiv);
-            }
-
-            // 2. Navbar Switcher (Accessible on both Desktop and Mobile view)
-            var searchBtn = document.getElementById('search-btn');
-            if (searchBtn && !document.querySelector('.orl-lang-nav')) {
-                var navDiv = document.createElement('div');
-                navDiv.className = 'orl-lang-switcher orl-lang-nav';
-                navDiv.innerHTML =
-                    '<button class="orl-lang-toggle" type="button" aria-label="Select Language" title="Change Language">' +
-                    '  <span class="globe-icon">🌐</span>' +
-                    '  <span class="orl-lang-current-code">' + currentInfo.flag + ' ' + currentInfo.code.toUpperCase() + '</span>' +
                     '  <i class="ti-angle-down arrow-icon"></i>' +
                     '</button>' +
                     buildDropdownMenuHTML(currentLang);
@@ -893,46 +883,12 @@ var form = $('.contact__form'),
                 attachSwitcherEvents(navDiv);
             }
 
-            // 3. Floating Quick Switcher (Bottom-Left on all devices)
-            if (!document.querySelector('.orl-lang-floating')) {
-                var floatDiv = document.createElement('div');
-                floatDiv.className = 'orl-lang-switcher orl-lang-floating';
-                floatDiv.innerHTML =
-                    '<button class="orl-lang-toggle" type="button" aria-label="Select Language" title="Translate Website">' +
-                    '  <span class="globe-icon">🌐</span>' +
-                    '  <span class="orl-lang-current-label">' + currentInfo.flag + ' ' + currentInfo.native + '</span>' +
-                    '  <i class="ti-angle-up arrow-icon"></i>' +
-                    '</button>' +
-                    buildDropdownMenuHTML(currentLang);
-
-                document.body.appendChild(floatDiv);
-                attachSwitcherEvents(floatDiv);
-            }
-
-            // 4. Enhance Footer Selector if present
-            var footerSelect = document.getElementById('language-selector');
-            if (footerSelect) {
-                footerSelect.innerHTML = '';
-                for (var i = 0; i < LANGUAGES.length; i++) {
-                    var opt = document.createElement('option');
-                    opt.value = LANGUAGES[i].code;
-                    opt.textContent = LANGUAGES[i].name + ' (' + LANGUAGES[i].native + ')';
-                    if (LANGUAGES[i].code === currentLang) {
-                        opt.selected = true;
-                    }
-                    footerSelect.appendChild(opt);
-                }
-                footerSelect.addEventListener('change', function () {
-                    window.changeHospitalLanguage(this.value);
-                });
-            }
-
             ensureGoogleTranslate();
         }
 
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', injectLanguageSwitchers);
+            document.addEventListener('DOMContentLoaded', injectSingleLanguageSwitcher);
         } else {
-            injectLanguageSwitchers();
+            injectSingleLanguageSwitcher();
         }
     })();
