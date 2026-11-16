@@ -30,6 +30,40 @@ class HospitalMailer {
                 'log_file' => __DIR__ . '/mail_debug.log'
             ];
         }
+
+        // Support .env file if present in public_html or controller
+        $envPaths = [dirname(__DIR__) . '/.env', __DIR__ . '/.env'];
+        foreach ($envPaths as $envFile) {
+            if (file_exists($envFile)) {
+                $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+                foreach ($lines as $line) {
+                    $line = trim($line);
+                    if (empty($line) || strpos($line, '#') === 0) continue;
+                    if (strpos($line, '=') !== false) {
+                        list($key, $val) = explode('=', $line, 2);
+                        $key = trim($key);
+                        $val = trim($val, " \t\n\r\0\x0B\"'");
+                        if ($key === 'SMTP_HOST') $this->config['smtp']['host'] = $val;
+                        if ($key === 'SMTP_PORT') $this->config['smtp']['port'] = intval($val);
+                        if ($key === 'SMTP_SECURE') $this->config['smtp']['secure'] = strtolower($val);
+                        if ($key === 'SMTP_USER' || $key === 'SMTP_USERNAME' || $key === 'GMAIL_USER' || $key === 'MAIL_USERNAME') {
+                            $this->config['smtp']['username'] = $val;
+                            if (empty($this->config['from_email'])) $this->config['from_email'] = $val;
+                        }
+                        if ($key === 'SMTP_PASS' || $key === 'SMTP_PASSWORD' || $key === 'GMAIL_PASSWORD' || $key === 'GMAIL_APP_PASSWORD' || $key === 'MAIL_PASSWORD') {
+                            $cleanPass = str_replace(' ', '', $val);
+                            $this->config['smtp']['password'] = $cleanPass;
+                            if (!empty($cleanPass)) {
+                                $this->config['smtp']['enabled'] = true;
+                            }
+                        }
+                        if ($key === 'RECEIVER_EMAIL' || $key === 'LEAD_EMAIL' || $key === 'MAIL_RECEIVER') {
+                            $this->config['recipients'] = array_map('trim', explode(',', $val));
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /**
