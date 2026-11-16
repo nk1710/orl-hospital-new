@@ -1,0 +1,251 @@
+/* ==========================================================================
+   ORL International Hospital - Multilingual Switcher & Google Translate Styles
+   ========================================================================== */
+
+/* 1. Google Translate UI Cleansing (Remove ugly bars, tooltips, layout shifts) */
+.goog-te-banner-frame.skiptranslate,
+iframe.goog-te-banner-frame,
+.goog-te-banner-frame {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+}
+
+body {
+    top: 0px !important;
+    position: static !important;
+}
+
+#google_translate_element {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+}
+
+.skiptranslate iframe {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+.goog-tooltip,
+.goog-tooltip:hover,
+#goog-gt-tt {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+.goog-text-highlight {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* 2. Language Switcher Dropdown Container */
+.orl-lang-switcher {
+    position: relative;
+    display: inline-block;
+    vertical-align: middle;
+    font-family: 'Barlow', -apple-system, BlinkMacSystemFont, sans-serif;
+    z-index: 1050;
+}
+
+/* Toggle Buttons */
+.orl-lang-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    outline: none !important;
+    line-height: 1.4;
+    text-decoration: none !important;
+    user-select: none;
+}
+
+.orl-lang-toggle:hover,
+.orl-lang-toggle:focus {
+    background: #e62000;
+    color: #ffffff !important;
+    border-color: #e62000;
+    box-shadow: 0 2px 8px rgba(230, 32, 0, 0.3);
+}
+
+.orl-lang-toggle .globe-icon {
+    font-size: 14px;
+    line-height: 1;
+}
+
+.orl-lang-toggle .arrow-icon {
+    font-size: 10px;
+    transition: transform 0.2s ease;
+}
+
+.orl-lang-switcher.open .orl-lang-toggle .arrow-icon {
+    transform: rotate(180deg);
+}
+
+/* Dropdown Menu */
+.orl-lang-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    padding: 6px 0;
+    min-width: 230px;
+    max-height: 380px;
+    overflow-y: auto;
+    list-style: none;
+    margin: 0;
+    display: none;
+    z-index: 999999;
+}
+
+.orl-lang-switcher.open .orl-lang-menu {
+    display: block;
+    animation: orlFadeInDown 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes orlFadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Dropdown Item */
+.orl-lang-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 16px;
+    color: #1e293b !important;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+    text-decoration: none !important;
+    border-bottom: 1px solid #f8fafc;
+}
+
+.orl-lang-item:last-child {
+    border-bottom: none;
+}
+
+.orl-lang-item:hover {
+    background: #f1f5f9;
+    color: #21548b !important;
+}
+
+.orl-lang-item.active {
+    background: #e0edfb;
+    color: #21548b !important;
+    font-weight: 700;
+}
+
+.orl-lang-item .flag {
+    font-size: 16px;
+    margin-right: 10px;
+    display: inline-block;
+    line-height: 1;
+}
+
+.orl-lang-item .lang-en {
+    flex-grow: 1;
+    text-align: left;
+    font-weight: 500;
+}
+
+.orl-lang-item .lang-native {
+    font-size: 12px;
+    color: #64748b;
+    margin-left: 8px;
+    font-weight: 600;
+}
+
+.orl-lang-item.active .lang-native {
+    color: #21548b;
+}
+
+/* 3. Top Header Placement (Desktop) */
+.top-header .orl-lang-switcher {
+    margin-left: 12px;
+}
+
+/* 4. Navbar Placement (Desktop & Mobile) */
+.navbar .orl-lang-switcher {
+    margin-right: 12px;
+}
+
+.navbar .orl-lang-toggle {
+    background: #f0f4f9;
+    color: #21548b !important;
+    border: 1px solid #c8d8ea;
+}
+
+.navbar .orl-lang-toggle:hover,
+.navbar .orl-lang-toggle:focus {
+    background: #21548b;
+    color: #ffffff !important;
+    border-color: #21548b;
+}
+
+/* 5. Floating Quick-Language Switcher (Visible on both Mobile & Desktop) */
+.orl-lang-floating {
+    position: fixed;
+    bottom: 25px;
+    left: 25px;
+    z-index: 9998;
+}
+
+.orl-lang-floating .orl-lang-toggle {
+    background: #21548b;
+    color: #ffffff !important;
+    border: 2px solid #ffffff;
+    box-shadow: 0 4px 16px rgba(33, 84, 139, 0.4);
+    padding: 9px 16px;
+    font-size: 14px;
+    border-radius: 25px;
+}
+
+.orl-lang-floating .orl-lang-toggle:hover {
+    background: #e62000;
+    border-color: #ffffff;
+}
+
+.orl-lang-floating .orl-lang-menu {
+    bottom: calc(100% + 8px);
+    top: auto;
+    left: 0;
+    right: auto;
+    box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.18);
+}
+
+@media (max-width: 768px) {
+    .orl-lang-floating {
+        bottom: 20px;
+        left: 15px;
+    }
+    .orl-lang-floating .orl-lang-toggle {
+        padding: 7px 12px;
+        font-size: 12px;
+    }
+    .orl-lang-menu {
+        min-width: 210px;
+        max-height: 320px;
+    }
+}

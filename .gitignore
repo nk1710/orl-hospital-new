@@ -1,0 +1,14 @@
+# Logs and sensitive lead data
+controller/local_emails.log
+controller/mail_debug.log
+controller/leads_database.csv
+
+# Backups
+Backup/
+*.bak*
+
+# System & Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
