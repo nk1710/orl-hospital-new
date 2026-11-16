@@ -1,13 +1,6 @@
 <?php
 /**
  * ORL International Hospital - Mail & Lead Configuration
- * 
- * Instructions:
- * 1. Leads will be sent to the email address(es) listed in 'recipients'.
- * 2. By default, it uses PHP mail() configured with proper domain headers and envelope sender (-f)
- *    so it works directly on Hostinger without SPF/DMARC rejection.
- * 3. If you want 100% guaranteed delivery via SMTP (Hostinger Webmail or Gmail),
- *    simply set 'enabled' => true under 'smtp' and fill in your credentials.
  */
 
 return [
@@ -20,18 +13,18 @@ return [
     // Email Subject Prefix
     'subject_prefix' => '[ORL Hospital Lead] ',
 
-    // From email and name (Must belong to domain on Hostinger to pass SPF/DMARC)
-    'from_email' => 'noreply@orlinternationalhospital.com',
+    // From email and name
+    'from_email' => 'drdhirendrasinghent@gmail.com',
     'from_name'  => 'ORL International Hospital',
 
-    // SMTP Configuration (Optional but recommended for best deliverability)
+    // SMTP Configuration (Active with Gmail Authenticated SMTP)
     'smtp' => [
-        'enabled'  => false,                     // Set to true to enable SMTP
-        'host'     => 'smtp.hostinger.com',      // Hostinger: smtp.hostinger.com | Gmail: smtp.gmail.com
-        'port'     => 465,                       // 465 for SSL, 587 for TLS
-        'secure'   => 'ssl',                     // 'ssl' or 'tls'
-        'username' => 'noreply@orlinternationalhospital.com', // Your Hostinger/Gmail email
-        'password' => '',                        // Your email password or Google App Password
+        'enabled'  => true,
+        'host'     => 'smtp.gmail.com',
+        'port'     => 465,
+        'secure'   => 'ssl',
+        'username' => 'drdhirendrasinghent@gmail.com',
+        'password' => 'lkajspgjdhmqbofn',
         'timeout'  => 15
     ],
 
